@@ -1,0 +1,47 @@
+{
+  "name": "addhex",
+  "version": "0.1.0",
+  "description": "A utility for adding hexadecimal values with both library and CLI interfaces",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js"
+  },
+  "bin": {
+    "addhex": "./bin/cli.js"
+  },
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "start": "node bin/cli.js",
+    "lint": "eslint ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sandy-mount/addhex.git"
+  },
+  "keywords": [
+    "hex",
+    "hexadecimal",
+    "add",
+    "cli",
+    "utility",
+    "calculator"
+  ],
+  "author": "Melvin Carvalho",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sandy-mount/addhex/issues"
+  },
+  "homepage": "https://github.com/sandy-mount/addhex#readme",
+  "devDependencies": {
+    "eslint": "^8.51.0",
+    "jest": "^29.7.0"
+  },
+  "engines": {
+    "node": ">=14.16.0"
+  },
+  "files": [
+    "lib",
+    "bin"
+  ]
+}

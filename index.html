@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AddHex - Hexadecimal Addition Tool</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css"
+    />
+    <style>
+      :root {
+        --primary-color: #6f42c1;
+        --hover-color: #5a36a0;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        color: #333;
+        line-height: 1.6;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 40px;
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 15px;
+      }
+
+      h1 {
+        color: var(--primary-color);
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+      }
+
+      .subtitle {
+        font-style: italic;
+        color: #666;
+        font-size: 1.1rem;
+      }
+
+      .calculator {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+      }
+
+      .hex-inputs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .input-control {
+        flex: 1;
+        min-width: 120px;
+      }
+
+      input[type='text'] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: 'Consolas', monospace;
+      }
+
+      .result-box {
+        background-color: #f0f0f0;
+        padding: 15px;
+        border-radius: 4px;
+        font-family: 'Consolas', monospace;
+        border-left: 4px solid var(--primary-color);
+        word-break: break-all;
+        margin-bottom: 20px;
+        font-size: 1.2rem;
+      }
+
+      button {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      button:hover {
+        background-color: var(--hover-color);
+      }
+
+      .button-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .examples {
+        margin-top: 30px;
+      }
+
+      .example-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .example-btn {
+        flex: 1;
+        text-align: center;
+        background-color: #f0f0f0;
+        border: 1px solid #ddd;
+        padding: 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .example-btn:hover {
+        background-color: #e0e0e0;
+      }
+
+      .code-section {
+        background-color: #282c34;
+        color: #abb2bf;
+        border-radius: 6px;
+        padding: 20px;
+        font-family: 'Consolas', monospace;
+        overflow-x: auto;
+        margin-bottom: 30px;
+      }
+
+      .footer {
+        text-align: center;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #ddd;
+        color: #666;
+      }
+
+      @media (max-width: 600px) {
+        .hex-inputs {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <!-- Preact & HTM Standalone -->
+    <script src="https://unpkg.com/htm@3.1.1/preact/standalone.umd.js"></script>
+
+    <script>
+      // Destructure htm and preact for convenience
+      const { html, Component, render } = htmPreact
+
+      // AddHex library function
+      function addHex(...hexValues) {
+        if (hexValues.length === 0) {
+          return '0'
+        }
+
+        let sum = 0n
+
+        for (const hex of hexValues) {
+          // Skip empty values
+          if (!hex.trim()) continue
+
+          // Handle hex strings with or without 0x prefix
+          const cleanHex = hex.toLowerCase().startsWith('0x')
+            ? hex.slice(2)
+            : hex
+
+          // Convert to BigInt to handle large hex values
+          try {
+            sum += BigInt(`0x${cleanHex}`)
+          } catch (e) {
+            throw new Error(`Invalid hex value: ${hex}`)
+          }
+        }
+
+        // Convert back to hex string without 0x prefix and in lowercase
+        return sum.toString(16).toLowerCase()
+      }
+
+      // Example data
+      const examples = [
+        { inputs: ['a', 'b'], label: 'a + b = 15' },
+        { inputs: ['ff', '1'], label: 'ff + 1 = 100' },
+        { inputs: ['0x64', '0x64'], label: '0x64 + 0x64 = c8' },
+        {
+          inputs: ['deadbeef', 'c0ffee'],
+          label: 'deadbeef + c0ffee = deadcafe'
+        }
+      ]
+
+      // App Component
+      class App extends Component {
+        constructor() {
+          super()
+          this.state = {
+            inputs: ['', ''],
+            result: '',
+            error: null
+          }
+        }
+
+        calculate = () => {
+          const validInputs = this.state.inputs.filter(input => input.trim())
+          if (validInputs.length === 0) {
+            this.setState({
+              error: 'Please enter at least one value',
+              result: ''
+            })
+            return
+          }
+
+          try {
+            const result = addHex(...validInputs)
+            this.setState({ result, error: null })
+          } catch (error) {
+            this.setState({ error: error.message, result: '' })
+          }
+        }
+
+        loadExample = exInputs => {
+          // Make sure we have at least as many input fields as the example needs
+          const newInputs = [...exInputs]
+          while (newInputs.length < this.state.inputs.length) {
+            newInputs.push('')
+          }
+
+          this.setState({ inputs: newInputs }, this.calculate)
+        }
+
+        handleInputChange = (index, value) => {
+          const newInputs = [...this.state.inputs]
+          newInputs[index] = value
+          this.setState({ inputs: newInputs })
+        }
+
+        addInputField = () => {
+          this.setState({ inputs: [...this.state.inputs, ''] })
+        }
+
+        removeInputField = () => {
+          if (this.state.inputs.length > 2) {
+            const newInputs = [...this.state.inputs]
+            newInputs.pop()
+            this.setState({ inputs: newInputs })
+          }
+        }
+
+        render() {
+          return html`
+            <header>
+              <h1>AddHex</h1>
+              <p class="subtitle">
+                A lightweight utility for adding hexadecimal values
+              </p>
+            </header>
+
+            <main>
+              <div class="calculator">
+                <h2>Hex Calculator</h2>
+
+                <div class="hex-inputs">
+                  ${this.state.inputs.map(
+                    (input, index) => html`
+                      <div class="input-control">
+                        <input
+                          type="text"
+                          placeholder="Enter hex value"
+                          value=${input}
+                          onInput=${e =>
+                            this.handleInputChange(index, e.target.value)}
+                          onKeyUp=${e => e.key === 'Enter' && this.calculate()}
+                        />
+                      </div>
+                    `
+                  )}
+                </div>
+
+                <div class="button-group">
+                  <button onClick=${this.calculate}>Calculate</button>
+                  <button onClick=${this.addInputField}>Add Input</button>
+                  ${this.state.inputs.length > 2 &&
+                  html`
+                    <button onClick=${this.removeInputField}>
+                      Remove Input
+                    </button>
+                  `}
+                </div>
+
+                ${this.state.error &&
+                html`
+                  <div
+                    class="result-box"
+                    style="color: #c41e3a; border-color: #c41e3a;"
+                  >
+                    Error: ${this.state.error}
+                  </div>
+                `}
+                ${this.state.result &&
+                html`
+                  <div>
+                    <h3>Result</h3>
+                    <div class="result-box">${this.state.result}</div>
+                  </div>
+                `}
+
+                <div class="examples">
+                  <h3>Examples</h3>
+                  <div class="example-row">
+                    ${examples.map(
+                      (example, index) => html`
+                        <div
+                          class="example-btn"
+                          onClick=${() => this.loadExample(example.inputs)}
+                        >
+                          ${example.label}
+                        </div>
+                      `
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <h2>How to Use</h2>
+              <p>
+                Enter hexadecimal values with or without the '0x' prefix. Click
+                "Calculate" to add them together.
+              </p>
+
+              <h2>Library Usage</h2>
+              <div class="code-section">
+                <pre>
+// ES Module import
+import { addHex } from 'addhex';
+
+// Add two hex values
+console.log(addHex('a', 'b'));  // '15'
+
+// Add multiple hex values
+console.log(addHex('10', '20', '30'));  // '60'
+
+// Supports 0x prefix
+console.log(addHex('0xff', '0x1'));  // '100'</pre
+                >
+              </div>
+
+              <h2>CLI Usage</h2>
+              <div class="code-section">
+                <pre>
+# Basic usage
+addhex a b
+# Output: 15
+
+# Add multiple values
+addhex 10 20 30
+# Output: 60</pre
+                >
+              </div>
+            </main>
+
+            <footer class="footer">
+              <p>
+                AddHex © ${new Date().getFullYear()} |
+                <a href="https://github.com/sandy-mount/addhex" target="_blank"
+                  >GitHub</a
+                >
+                |
+                <a href="https://www.npmjs.com/package/addhex" target="_blank"
+                  >npm</a
+                >
+              </p>
+            </footer>
+          `
+        }
+      }
+
+      // Render the app
+      render(html`<${App} />`, document.getElementById('app'))
+    </script>
+  </body>
+</html>
